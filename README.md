@@ -1,0 +1,2 @@
+# cometprune
+CometBFT pruning utility
