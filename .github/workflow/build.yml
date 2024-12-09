@@ -1,0 +1,43 @@
+name: Build Binaries
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        go-version: [ 1.23 ]
+        os: [ linux, darwin ]
+        arch: [ amd64, arm64 ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Build binaries
+        run: |
+          mkdir -p build
+          GOARCH=${{ matrix.arch }} GOOS=${{ matrix.os }} go build -ldflags "-s -w" -trimpath -o build/cometprune-${{ matrix.os }}-${{ matrix.arch }} main.go
+
+      - name: Compress
+        working-directory: ./build
+        run: gzip cometprune-${{ matrix.os }}-${{ matrix.arch }}
+
+      - name: Calculate hashes
+        working-directory: ./build
+        run: sha256sum cometprune-${{ matrix.os }}-${{ matrix.arch }}.gz > cometprune-${{ matrix.os }}-${{ matrix.arch }}.gz.sha256sum
+
+      - name: Upload binaries
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: build/*
