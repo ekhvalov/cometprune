@@ -65,18 +65,18 @@ func validate(path string, keepBlocks int64) error {
 }
 
 func pruneBlockStore(blockStoreDB *db.GoLevelDB, blockStore *store.BlockStore, pruneHeight int64) error {
-	fmt.Printf("Pruning blocks to height %d\n", pruneHeight)
+	fmt.Printf("Block store: pruning started\n")
 	prunedBlocks, err := blockStore.PruneBlocks(pruneHeight)
 	if err != nil {
 		return fmt.Errorf("could not prune blocks: %w", err)
 	}
-	fmt.Printf("Pruned blocks: %d\n", prunedBlocks)
+	fmt.Printf("Block store: pruning finished; %d block(s) pruned\n", prunedBlocks)
 
-	fmt.Println("Compacting block store")
+	fmt.Println("Block store: compacting started")
 	if err := blockStoreDB.Compact(nil, nil); err != nil {
 		return fmt.Errorf("could not compact block store: %w", err)
 	}
-	fmt.Println("Compacting block store finished")
+	fmt.Println("Block store: compacting finished")
 
 	return nil
 }
@@ -84,16 +84,17 @@ func pruneBlockStore(blockStoreDB *db.GoLevelDB, blockStore *store.BlockStore, p
 func pruneStateStore(stateDB db.DB, fromHeight, toHeight int64) error {
 	stateStore := state.NewStore(stateDB, state.StoreOptions{DiscardABCIResponses: false})
 
-	fmt.Printf("Pruning state store from height %d to height %d\n", fromHeight, toHeight)
+	fmt.Printf("State store: pruning started\n")
 	if err := stateStore.PruneStates(fromHeight, toHeight); err != nil {
 		return fmt.Errorf("could not prune state store: %w", err)
 	}
+	fmt.Printf("State store: pruning finished; %d state(s) pruned\n", toHeight-fromHeight)
 
-	fmt.Println("Compacting state store")
+	fmt.Println("State store: compacting started")
 	if err := stateDB.Compact(nil, nil); err != nil {
 		return fmt.Errorf("could not compact state store: %w", err)
 	}
-	fmt.Println("Compacting state store finished")
+	fmt.Println("State store: compacting finished")
 
 	return nil
 }
