@@ -49,7 +49,15 @@ func Prune(path string, keepBlocks int64) error {
 		return pruneStateStore(stateDB, minHeight, pruneHeight)
 	})
 
-	return errGroup.Wait()
+	err = errGroup.Wait()
+	if err != nil {
+		return fmt.Errorf("prune error: %w", err)
+	}
+
+	fmt.Printf("Min block: %d\n", blockStore.Base())
+	fmt.Printf("Max block: %d\n", blockStore.Height())
+
+	return nil
 }
 
 func validate(path string, keepBlocks int64) error {
